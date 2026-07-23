@@ -1,0 +1,52 @@
+# ============================================================
+# GitHub Actions - Paper Trading A LEVA (2x + stop -5%)
+# ============================================================
+# Gira ogni 4 ore (per un check dello stop-loss piu' preciso rispetto
+# a un controllo giornaliero). Al primo run ricostruisce lo storico dai
+# rebalance gia' fatti dal bot base, poi prosegue in parallelo.
+#
+# SETUP: stessi secret del workflow base (TELEGRAM_BOT_TOKEN,
+# TELEGRAM_CHAT_ID) - vedi SETUP_MOBILE_MONITORING.md
+# ============================================================
+
+name: paper-trade-leverage
+
+on:
+  schedule:
+    - cron: "15 */4 * * *"   # ogni 4 ore, 15 minuti dopo l'ora (evita conflitti col workflow base)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run-paper-trade-leverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installa dipendenze
+        run: pip install matplotlib
+
+      - name: Esegui paper trading a leva
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 paper_trade_leverage.py
+
+      - name: Genera grafico di confronto (base vs leva)
+        run: python3 plot_comparison.py || true
+
+      - name: Commit risultati aggiornati
+        run: |
+          git config user.name "paper-trade-bot"
+          git config user.email "actions@github.com"
+          git add paper_state_leverage.json paper_log_leverage.csv comparison_chart.png
+          git diff --quiet --cached || git commit -m "Aggiornamento paper trading a leva $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
