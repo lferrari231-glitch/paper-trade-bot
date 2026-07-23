@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Paper Trade">
+<title>Paper Trading — Naive Doppio Momentum</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --card: #131a22;
+    --border: #1f2933;
+    --text: #e5eaf0;
+    --muted: #8a97a3;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --amber: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    padding-bottom: 40px;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .position-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .position-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    background: rgba(59,130,246,0.15);
+    color: var(--blue);
+  }
+  .position-badge.cash { background: rgba(138,151,163,0.15); color: var(--muted); }
+  .position-badge.leva { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .capital { font-size: 24px; font-weight: 700; margin-top: 10px; }
+  .ret { font-size: 13px; margin-top: 2px; }
+  .ret.pos { color: var(--green); }
+  .ret.neg { color: var(--red); }
+  .stop-note { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  .eligible { color: var(--green); font-weight: 600; }
+  .not-eligible { color: var(--muted); }
+  .chart { width: 100%; border-radius: 10px; margin-top: 4px; display: block; }
+  .refresh-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  .err { color: var(--red); font-size: 13px; }
+  .last-update { color: var(--muted); font-size: 12px; text-align: center; margin-top: 10px; }
+  @media (max-width: 420px) {
+    .row-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <h1>📊 Paper Trading</h1>
+  <div class="sub">Naive Doppio Momentum · BTC/ETH/SOL/BNB perp (Hyperliquid) · confronto base vs leva</div>
+
+  <div class="row-2">
+    <div class="card" id="position-card">
+      <div class="card-label">Base (senza leva)</div>
+      <div class="position-row">
+        <span class="position-badge" id="position-badge">—</span>
+      </div>
+      <div class="capital" id="capital">—</div>
+      <div class="ret" id="ret">—</div>
+    </div>
+
+    <div class="card" id="leva-card">
+      <div class="card-label">Leva 2x · stop -5%</div>
+      <div class="position-row">
+        <span class="position-badge leva" id="leva-position-badge">—</span>
+      </div>
+      <div class="capital" id="leva-capital">—</div>
+      <div class="ret" id="leva-ret">—</div>
+      <div class="stop-note" id="leva-stop-note"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Asset</th><th>Mom 14d</th><th>Mom 30d</th><th>Stato</th></tr>
+      </thead>
+      <tbody id="momentum-table">
+        <tr><td colspan="4">Caricamento…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-label" style="margin-bottom:8px;">Confronto equity curve</div>
+    <img class="chart" id="chart-img" src="comparison_chart.png" alt="Confronto base vs leva"
+         onerror="this.onerror=null; this.src='paper_trade_chart.png' + '?t=' + Date.now();">
+  </div>
+
+  <button class="refresh-btn" onclick="location.reload()">↻ Aggiorna</button>
+  <div class="last-update" id="last-update"></div>
+  <div class="err" id="error"></div>
+
+<script>
+async function fetchJsonSafe(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
+async function fetchTextSafe(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (e) { return null; }
+}
+
+async function load() {
+  const cacheBust = "?t=" + Date.now();
+  try {
+    const [state, output, levState] = await Promise.all([
+      fetchJsonSafe("paper_state.json" + cacheBust),
+      fetchTextSafe("paper_trade_output.txt" + cacheBust),
+      fetchJsonSafe("paper_state_leverage.json" + cacheBust),
+    ]);
+
+    if (!state) throw new Error("paper_state.json non disponibile");
+
+    // --- BASE: posizione + capitale (dal testo output, come prima) ---
+    const pos = state.current_symbol || "CASH";
+    const badge = document.getElementById("position-badge");
+    badge.textContent = pos;
+    if (pos === "CASH") badge.classList.add("cash");
+
+    if (output) {
+      const capMatch = output.match(/Capitale virtuale corrente:\s*\$([\d,.]+)/);
+      const retMatch = output.match(/Rendimento totale:\s*([+\-\d.]+)%/);
+      const cap = capMatch ? capMatch[1] : "n/d";
+      const ret = retMatch ? parseFloat(retMatch[1]) : null;
+
+      document.getElementById("capital").textContent = "$" + cap;
+      const retEl = document.getElementById("ret");
+      if (ret !== null) {
+        retEl.textContent = (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%";
+        retEl.className = "ret " + (ret >= 0 ? "pos" : "neg");
+      }
+
+      // tabella momentum (condivisa, stesso segnale per entrambi i track)
+      const rows = [];
+      const lineRe = /(BTC|ETH|SOL|BNB)\s*:\s*mom14d\s*([+\-\d.]+)%\s*mom30d\s*([+\-\d.]+)%\s*\[(OK|--)\]/g;
+      let m;
+      while ((m = lineRe.exec(output)) !== null) {
+        rows.push({ sym: m[1], m14: m[2], m30: m[3], ok: m[4] === "OK" });
+      }
+      const tbody = document.getElementById("momentum-table");
+      if (rows.length) {
+        tbody.innerHTML = rows.map(r => `
+          <tr>
+            <td>${r.sym}</td>
+            <td>${r.m14}%</td>
+            <td>${r.m30}%</td>
+            <td class="${r.ok ? 'eligible' : 'not-eligible'}">${r.ok ? '✅ eligibile' : '— no'}</td>
+          </tr>`).join("");
+      } else {
+        tbody.innerHTML = "<tr><td colspan='4'>Nessun dato disponibile</td></tr>";
+      }
+
+      const tsMatch = output.match(/Timestamp UTC:\s*([\d\-T:+]+)/);
+      if (tsMatch) {
+        const d = new Date(tsMatch[1]);
+        document.getElementById("last-update").textContent =
+          "Base aggiornato: " + d.toLocaleString("it-IT", { dateStyle: "medium", timeStyle: "short" });
+      }
+    }
+
+    // --- LEVA: posizione + capitale (direttamente dal json, niente regex) ---
+    const levBadge = document.getElementById("leva-position-badge");
+    const levCapEl = document.getElementById("leva-capital");
+    const levRetEl = document.getElementById("leva-ret");
+    const levNoteEl = document.getElementById("leva-stop-note");
+    if (levState) {
+      const levPos = levState.current_symbol || "CASH";
+      levBadge.textContent = levPos;
+      if (levPos === "CASH") levBadge.classList.add("cash");
+
+      // capitale all'ultimo run del workflow leva (ogni 4h, quindi gia' abbastanza fresco)
+      const cap = levState.capital_at_entry;
+      levCapEl.textContent = "$" + cap.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      const ret = (cap / levState.initial_capital - 1) * 100;
+      levRetEl.textContent = (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%";
+      levRetEl.className = "ret " + (ret >= 0 ? "pos" : "neg");
+
+      const stopCount = levState.stop_count || 0;
+      levNoteEl.textContent = stopCount > 0
+        ? `${stopCount} stop-loss scattat${stopCount === 1 ? 'o' : 'i'} finora`
+        : "Nessuno stop-loss scattato finora";
+    } else {
+      levBadge.textContent = "n/d";
+      levCapEl.textContent = "—";
+      levRetEl.textContent = "Workflow leva non ancora eseguito";
+    }
+
+    // forza reload immagine (evita cache)
+    document.getElementById("chart-img").src = "comparison_chart.png" + cacheBust;
+
+  } catch (e) {
+    document.getElementById("error").textContent =
+      "Impossibile caricare i dati (" + e.message + "). Il workflow GitHub potrebbe non aver ancora girato o i file non sono ancora nel repo/Pages.";
+  }
+}
+load();
+</script>
+</body>
+</html>

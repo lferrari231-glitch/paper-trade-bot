@@ -1,0 +1,38 @@
+{
+  "initial_capital": 5000.0,
+  "capital_at_entry": 5122.5254342574735,
+  "current_symbol": "ETH",
+  "entry_price": 1912.4912299999999,
+  "entry_time": "2026-07-22T07:45:00.813251+00:00",
+  "last_rebalance": "2026-07-22T07:45:00.813251+00:00",
+  "trade_count": 1,
+  "win_count": 1,
+  "history": [
+    {
+      "timestamp": "2026-07-14T10:39:15.183896+00:00",
+      "event": "rebalance",
+      "from": null,
+      "to": "SOL",
+      "capital_after": 4998.25,
+      "prices_snapshot": {
+        "BTC": 62730.0,
+        "ETH": 1791.4,
+        "SOL": 75.155,
+        "BNB": 570.17
+      }
+    },
+    {
+      "timestamp": "2026-07-22T07:45:00.813251+00:00",
+      "event": "rebalance",
+      "from": "SOL",
+      "to": "ETH",
+      "capital_after": 5122.5254342574735,
+      "prices_snapshot": {
+        "BTC": 65745.0,
+        "ETH": 1912.3,
+        "SOL": 77.093,
+        "BNB": 567.54
+      }
+    }
+  ]
+}
