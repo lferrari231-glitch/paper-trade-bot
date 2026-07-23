@@ -1,0 +1,62 @@
+# ============================================================
+# GitHub Actions - Paper Trading Naive Doppio Momentum
+# ============================================================
+# Gira automaticamente ogni giorno su server GitHub, indipendente
+# dal Mac di Lorenzo. Esegue paper_trade.py + plot_paper_trade.py,
+# committa i file aggiornati (stato/log/grafico/output) nel repo.
+#
+# SETUP RICHIESTO (una tantum, vedi SETUP_MOBILE_MONITORING.md):
+#   1. Repo GitHub con questi file nella root (o adatta i path sotto)
+#   2. Actions abilitate (Settings > Actions > General > Allow all actions)
+#   3. (opzionale, per notifiche) Secrets del repo:
+#        TELEGRAM_BOT_TOKEN
+#        TELEGRAM_CHAT_ID
+# ============================================================
+
+name: paper-trade-daily
+
+on:
+  schedule:
+    # 21:00 Europe/Rome = 19:00 UTC (ora legale) / 20:00 UTC (ora solare)
+    # GitHub Actions non supporte i fusi orari nel cron, quindi usiamo 19:00 UTC
+    # (in inverno il run scattera' alle 20:00 locali circa - va bene per uno script giornaliero)
+    - cron: "0 19 * * *"
+  workflow_dispatch: {}   # permette di lanciarlo manualmente da GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  run-paper-trade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installa dipendenze
+        run: pip install matplotlib
+
+      - name: Esegui paper trading
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 paper_trade.py > paper_trade_output.txt 2>&1 || true
+
+      - name: Genera grafico
+        run: python3 plot_paper_trade.py || true
+
+      - name: Mostra output (log di debug nella Action)
+        run: cat paper_trade_output.txt
+
+      - name: Commit risultati aggiornati
+        run: |
+          git config user.name "paper-trade-bot"
+          git config user.email "actions@github.com"
+          git add paper_state.json paper_log.csv paper_trade_output.txt paper_trade_chart.png
+          git diff --quiet --cached || git commit -m "Aggiornamento paper trading $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
