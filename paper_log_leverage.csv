@@ -2,3 +2,4 @@ timestamp,event,symbol,mtm_capital,btc,eth,sol,bnb,note
 2026-07-22T07:45:00.813251+00:00,exit,SOL,5250.51,,,,,"pnl_leva=+5.16% (backfill)"
 2026-07-23T12:32:40.635452+00:00,monitor,ETH,5274.82,65339.00,1917.40,77.44,569.65,"target=ETH, days_to_rebal=5.80"
 2026-07-23T15:02:19.919972+00:00,monitor,ETH,5143.67,64874.00,1893.50,76.27,566.52,"target=ETH, days_to_rebal=5.70"
+2026-07-23T17:05:48.011968+00:00,monitor,ETH,5101.42,64734.00,1885.80,75.88,566.28,"target=ETH, days_to_rebal=5.61"
