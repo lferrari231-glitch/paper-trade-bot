@@ -16,3 +16,4 @@ timestamp,event,symbol,mtm_capital,btc,eth,sol,bnb,note
 2026-07-23T15:00:33.222497+00:00,monitor,ETH,5073.53,64875.00,1894.20,76.30,566.62,"target=ETH, days_to_rebal=5.70"
 2026-07-23T22:33:38.539172+00:00,monitor,ETH,5038.45,65149.00,1881.10,76.16,567.06,"target=ETH, days_to_rebal=5.38"
 2026-07-24T10:57:08.330455+00:00,monitor,ETH,5042.20,64926.00,1882.50,75.41,566.55,"target=ETH, days_to_rebal=4.87"
+2026-07-24T22:40:16.632995+00:00,monitor,ETH,4980.32,64169.00,1859.40,73.88,564.65,"target=ETH, days_to_rebal=4.38"
