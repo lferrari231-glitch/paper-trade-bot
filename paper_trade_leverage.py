@@ -255,10 +255,12 @@ def run_once():
                 "prices_snapshot": current_prices,
             })
             base.send_telegram(
-                f"🛑 <b>STOP-LOSS (leva {LEVERAGE:.0f}x)</b>\n"
+                f"🛑 <b>STOP-LOSS (leva {LEVERAGE:.0f}x)</b>\n\n"
                 f"Uscita da {state['current_symbol']} @ ${exit_price:,.2f}\n"
                 f"P&L: {leveraged_pnl*100:+.2f}%  |  Capitale: ${new_cap:,.2f}"
             )
+            # NB: il grafico viene inviato da uno step separato del workflow dopo
+            # commit/push (vedi paper_trade_leverage.yml), cosi' e' sempre fresco.
             state["current_symbol"] = None
             state["entry_price"] = None
             state["entry_time"] = None
@@ -335,7 +337,7 @@ def run_once():
         notify_lines.append("ALLOCATE TO CASH")
 
     base.send_telegram(
-        f"⚡ <b>Rebalance (leva {LEVERAGE:.0f}x)</b>\n" + "\n".join(notify_lines) + f"\nCapitale: ${cap:,.2f}"
+        f"⚡ <b>Rebalance (leva {LEVERAGE:.0f}x)</b>\n\n" + "\n".join(notify_lines) + f"\nCapitale: ${cap:,.2f}"
     )
 
     state["history"].append({
