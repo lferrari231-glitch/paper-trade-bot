@@ -50,6 +50,8 @@ API_URL         = "https://api.hyperliquid.xyz/info"
 STATE_FILE = "paper_state.json"
 LOG_FILE   = "paper_log.csv"
 
+LEVERAGE_STATE_FILE = "paper_state_leverage.json"
+
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID")
 
@@ -57,11 +59,41 @@ TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID")
 # ======================================================================
 # 0. NOTIFICHE TELEGRAM (opzionali: attive solo se le env var sono settate)
 # ======================================================================
+def leverage_summary_line():
+    """Riga di riepilogo del bot a leva (se il file esiste), da aggiungere in
+    coda ai messaggi Telegram del bot base per avere il confronto in un unico posto."""
+    if not os.path.exists(LEVERAGE_STATE_FILE):
+        return "⚡ Leva 2x: non ancora avviato"
+    try:
+        with open(LEVERAGE_STATE_FILE) as f:
+            lev = json.load(f)
+        cap = lev.get("capital_at_entry")
+        initial = lev.get("initial_capital")
+        pos = lev.get("current_symbol") or "CASH"
+        stop_count = lev.get("stop_count", 0)
+        ret = (cap / initial - 1) * 100 if cap and initial else 0
+        extra = f", {stop_count} stop-loss finora" if stop_count else ""
+        return f"⚡ Leva 2x: {pos} | ${cap:,.2f} ({ret:+.2f}%{extra})"
+    except Exception as e:
+        return f"⚡ Leva 2x: dati non leggibili ({e})"
+
+
+SEND_PHOTO_FLAG_FILE = ".send_photo_flag"
+
+
 def send_telegram(text):
     """Invia un messaggio Telegram se TELEGRAM_BOT_TOKEN/CHAT_ID sono configurati.
     Non fa mai fallire lo script: eventuali errori vengono solo stampati."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
+    # Segna che e' stato mandato un messaggio "vero" (non il monitoring silenzioso
+    # del bot a leva): il workflow legge questo flag per decidere se allegare anche
+    # il grafico aggiornato in uno step successivo (dopo il commit/push).
+    try:
+        with open(SEND_PHOTO_FLAG_FILE, "w") as f:
+            f.write("1")
+    except Exception:
+        pass
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     body = json.dumps({
         "chat_id": TELEGRAM_CHAT_ID,
@@ -76,6 +108,59 @@ def send_telegram(text):
             r.read()
     except Exception as e:
         print(f"  [WARN] Notifica Telegram non inviata: {e}")
+
+
+def send_telegram_photo(caption, filename="comparison_chart.png"):
+    """Manda il grafico come foto Telegram, leggendolo dal repo GitHub pubblico
+    (raw.githubusercontent.com), cosi' non serve caricare/allegare il file a mano.
+    Funziona solo quando lo script gira dentro una GitHub Action (dove GITHUB_REPOSITORY
+    e' impostata automaticamente); in locale viene saltato senza errori."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        return
+    photo_url = f"https://raw.githubusercontent.com/{repo}/main/{filename}"
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    body = json.dumps({
+        "chat_id": TELEGRAM_CHAT_ID,
+        "photo": photo_url,
+        "caption": caption,
+        "parse_mode": "HTML",
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=body, headers={"Content-Type": "application/json"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            r.read()
+    except Exception as e:
+        print(f"  [WARN] Invio grafico Telegram non riuscito: {e}")
+
+
+def compute_sma(candles, n):
+    """Media mobile semplice sugli ultimi n giorni di chiusura."""
+    if candles is None or len(candles) < n:
+        return None
+    closes = [c["close"] for c in candles[-n:]]
+    return sum(closes) / n
+
+
+def build_market_table(price_history, current_prices):
+    """Tabellina monospace (prezzo, SMA14, SMA30 per asset) per il messaggio Telegram,
+    per avere un colpo d'occhio sulla situazione di mercato al posto delle sole
+    spunte di eligibilita'."""
+    def fmt(v):
+        return f"{v:,.0f}" if v is not None else "n/d"
+
+    lines = [f"{'':4s}{'Prezzo':>9s}{'SMA14':>9s}{'SMA30':>9s}"]
+    for sym in SYMBOLS:
+        candles = price_history.get(sym)
+        sma14 = compute_sma(candles, LOOKBACK_SHORT)
+        sma30 = compute_sma(candles, LOOKBACK_LONG)
+        price = current_prices.get(sym)
+        lines.append(f"{sym:4s}{fmt(price):>9s}{fmt(sma14):>9s}{fmt(sma30):>9s}")
+    return "<pre>" + "\n".join(lines) + "</pre>"
 
 
 # ======================================================================
@@ -325,15 +410,17 @@ def main():
                    state["current_symbol"], mtm, current_prices,
                    note=f"target={target}, days_to_rebal={next_rebal_days:.2f}")
         save_state(state)
-        elig_str = ", ".join(
-            f"{sym} {'✅' if momentums[sym]['eligible'] else '—'}" for sym in SYMBOLS
-        )
+        market_table = build_market_table(price_history, current_prices)
         send_telegram(
-            f"📈 <b>Monitor giornaliero</b>\n"
-            f"Posizione: {state['current_symbol'] or 'CASH'}  |  Capitale: ${mtm:,.2f} ({total_return:+.2f}%)\n"
-            f"Eligibilità: {elig_str}\n"
+            f"📈 <b>Monitor giornaliero</b>\n\n"
+            f"<b>Base</b>: {state['current_symbol'] or 'CASH'} | ${mtm:,.2f} ({total_return:+.2f}%)\n"
+            f"{leverage_summary_line()}\n\n"
+            f"<b>Mercato</b>\n{market_table}\n"
             f"Prossimo rebalance tra {next_rebal_days:.1f}g (target: {target or 'CASH'})"
         )
+        # NB: il grafico viene inviato da uno step separato del workflow DOPO il
+        # commit/push, cosi' raw.githubusercontent.com serve gia' la versione fresca
+        # (vedi paper_trade.yml / paper_trade_leverage.yml).
         return
 
     # =========== ESEGUI REBALANCE VIRTUALE ===========
@@ -346,9 +433,12 @@ def main():
         append_log(now.isoformat(), "rebalance_hold",
                    target, mtm, current_prices,
                    note="no change")
+        market_table = build_market_table(price_history, current_prices)
         send_telegram(
-            f"📊 <b>Rebalance</b>: nessun cambio, resto su <b>{target or 'CASH'}</b>\n"
-            f"Capitale: ${mtm:,.2f} ({total_return:+.2f}%)"
+            f"📊 <b>Rebalance</b>: nessun cambio, resto su <b>{target or 'CASH'}</b>\n\n"
+            f"<b>Base</b>: ${mtm:,.2f} ({total_return:+.2f}%)\n"
+            f"{leverage_summary_line()}\n\n"
+            f"<b>Mercato</b>\n{market_table}"
         )
     else:
         # Chiudi posizione corrente (se c'e')
@@ -392,9 +482,11 @@ def main():
                        note="no eligible asset")
             notify_lines.append("ALLOCATE TO CASH (nessun asset eligibile)")
 
+        market_table = build_market_table(price_history, current_prices)
         send_telegram(
-            "🔁 <b>Rebalance eseguito</b>\n" + "\n".join(notify_lines) +
-            f"\nCapitale: ${cap:,.2f}"
+            "🔁 <b>Rebalance eseguito (base)</b>\n\n" + "\n".join(notify_lines) +
+            f"\nCapitale: ${cap:,.2f}\n{leverage_summary_line()}\n\n"
+            f"<b>Mercato</b>\n{market_table}"
         )
 
         state["history"].append({
@@ -418,3 +510,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
