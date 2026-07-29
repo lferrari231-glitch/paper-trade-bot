@@ -28,3 +28,4 @@ timestamp,event,symbol,mtm_capital,btc,eth,sol,bnb,note
 2026-07-29T09:11:55.393098+00:00,exit,ETH,5134.17,64417.00,1917.70,73.95,571.81,"pnl=+0.26%"
 2026-07-29T09:11:55.393098+00:00,to_cash,CASH,5134.17,64417.00,1917.70,73.95,571.81,"no eligible asset"
 2026-07-29T22:17:01.292432+00:00,monitor,CASH,5134.17,63998.00,1906.90,73.58,571.39,"target=None, days_to_rebal=6.45"
+2026-07-29T22:54:54.280639+00:00,monitor,CASH,5134.17,63899.00,1906.00,73.55,570.60,"target=None, days_to_rebal=6.43"
