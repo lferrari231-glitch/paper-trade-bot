@@ -22,3 +22,4 @@ timestamp,event,symbol,mtm_capital,btc,eth,sol,bnb,note
 2026-07-29T10:16:35.367335+00:00,rebalance_hold,ETH,5283.60,64635.00,1919.00,74.00,572.56,"no change"
 2026-07-29T16:54:52.270492+00:00,monitor,ETH,5144.77,63733.00,1893.70,73.17,568.14,"target=None, days_to_rebal=6.72"
 2026-07-29T23:43:49.161030+00:00,monitor,ETH,5230.92,63962.00,1909.40,73.57,571.39,"target=None, days_to_rebal=6.44"
+2026-07-30T09:42:26.549093+00:00,monitor,ETH,5279.76,64581.00,1918.30,74.08,578.83,"target=ETH, days_to_rebal=6.02"
