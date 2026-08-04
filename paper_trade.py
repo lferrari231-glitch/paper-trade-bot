@@ -146,20 +146,28 @@ def compute_sma(candles, n):
     return sum(closes) / n
 
 
-def build_market_table(price_history, current_prices):
-    """Tabellina monospace (prezzo, SMA14, SMA30 per asset) per il messaggio Telegram,
-    per avere un colpo d'occhio sulla situazione di mercato al posto delle sole
-    spunte di eligibilita'."""
-    def fmt(v):
-        return f"{v:,.0f}" if v is not None else "n/d"
+def build_market_table(current_prices, momentums):
+    """Tabella monospace (prezzo, mom14d, mom30d, eligibilita' per asset) per il
+    messaggio Telegram: stessi dati e stesso criterio di ordine/leggibilita' del
+    riepilogo giornaliero in chat (numeri allineati a destra, segno esplicito,
+    Si'/No invece di semplici spunte)."""
+    def fmt_price(v):
+        if v is None:
+            return "n/d"
+        return f"{v:,.2f}" if v < 1000 else f"{v:,.0f}"
 
-    lines = [f"{'':4s}{'Prezzo':>9s}{'SMA14':>9s}{'SMA30':>9s}"]
+    def fmt_pct(v):
+        return f"{v * 100:+.2f}%" if v is not None else "n/d"
+
+    lines = [f"{'':4s}{'Prezzo':>10s}{'Mom14d':>9s}{'Mom30d':>9s}  Elig"]
     for sym in SYMBOLS:
-        candles = price_history.get(sym)
-        sma14 = compute_sma(candles, LOOKBACK_SHORT)
-        sma30 = compute_sma(candles, LOOKBACK_LONG)
+        m = momentums.get(sym, {})
         price = current_prices.get(sym)
-        lines.append(f"{sym:4s}{fmt(price):>9s}{fmt(sma14):>9s}{fmt(sma30):>9s}")
+        ms, ml = m.get("mom_short"), m.get("mom_long")
+        elig = "Si" if m.get("eligible") else "No"
+        lines.append(
+            f"{sym:4s}{fmt_price(price):>10s}{fmt_pct(ms):>9s}{fmt_pct(ml):>9s}  {elig}"
+        )
     return "<pre>" + "\n".join(lines) + "</pre>"
 
 
@@ -410,7 +418,7 @@ def main():
                    state["current_symbol"], mtm, current_prices,
                    note=f"target={target}, days_to_rebal={next_rebal_days:.2f}")
         save_state(state)
-        market_table = build_market_table(price_history, current_prices)
+        market_table = build_market_table(current_prices, momentums)
         send_telegram(
             f"📈 <b>Monitor giornaliero</b>\n\n"
             f"<b>Base</b>: {state['current_symbol'] or 'CASH'} | ${mtm:,.2f} ({total_return:+.2f}%)\n"
@@ -433,7 +441,7 @@ def main():
         append_log(now.isoformat(), "rebalance_hold",
                    target, mtm, current_prices,
                    note="no change")
-        market_table = build_market_table(price_history, current_prices)
+        market_table = build_market_table(current_prices, momentums)
         send_telegram(
             f"📊 <b>Rebalance</b>: nessun cambio, resto su <b>{target or 'CASH'}</b>\n\n"
             f"<b>Base</b>: ${mtm:,.2f} ({total_return:+.2f}%)\n"
@@ -482,7 +490,7 @@ def main():
                        note="no eligible asset")
             notify_lines.append("ALLOCATE TO CASH (nessun asset eligibile)")
 
-        market_table = build_market_table(price_history, current_prices)
+        market_table = build_market_table(current_prices, momentums)
         send_telegram(
             "🔁 <b>Rebalance eseguito (base)</b>\n\n" + "\n".join(notify_lines) +
             f"\nCapitale: ${cap:,.2f}\n{leverage_summary_line()}\n\n"
@@ -510,4 +518,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
