@@ -43,11 +43,14 @@ jobs:
       - name: Genera grafico di confronto (base vs leva)
         run: python3 plot_comparison.py || true
 
+      - name: Genera grafico aggiornato (base + overlay leva)
+        run: python3 plot_paper_trade.py || true
+
       - name: Commit risultati aggiornati
         run: |
           git config user.name "paper-trade-bot"
           git config user.email "actions@github.com"
-          git add paper_state_leverage.json paper_log_leverage.csv comparison_chart.png
+          git add paper_state_leverage.json paper_log_leverage.csv comparison_chart.png paper_trade_chart.png
           git diff --quiet --cached || git commit -m "Aggiornamento paper trading a leva $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
 
@@ -58,6 +61,5 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           if [ -f .send_photo_flag ]; then
-            python3 -c "import paper_trade as pt; pt.send_telegram_photo('📈 Equity curve aggiornata (base vs leva)')" || true
+            python3 -c "import paper_trade as pt; pt.send_telegram_photo('📈 Equity curve aggiornata (base + leva)', filename='paper_trade_chart.png')" || true
           fi
-
