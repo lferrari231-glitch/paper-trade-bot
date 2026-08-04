@@ -71,6 +71,5 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           if [ -f .send_photo_flag ]; then
-            python3 -c "import paper_trade as pt; pt.send_telegram_photo('📈 Equity curve aggiornata (base vs leva)')" || true
+            python3 -c "import paper_trade as pt; pt.send_telegram_photo('📈 Equity curve aggiornata (base + leva)', filename='paper_trade_chart.png')" || true
           fi
-
