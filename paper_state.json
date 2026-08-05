@@ -1,10 +1,10 @@
 {
   "initial_capital": 5000.0,
-  "capital_at_entry": 5134.165665656689,
-  "current_symbol": null,
-  "entry_price": null,
-  "entry_time": null,
-  "last_rebalance": "2026-07-29T09:11:55.393098+00:00",
+  "capital_at_entry": 5132.36870767371,
+  "current_symbol": "BNB",
+  "entry_price": 594.3794320000001,
+  "entry_time": "2026-08-05T22:39:53.801921+00:00",
+  "last_rebalance": "2026-08-05T22:39:53.801921+00:00",
   "trade_count": 2,
   "win_count": 2,
   "history": [
@@ -45,6 +45,19 @@
         "ETH": 1917.7,
         "SOL": 73.947,
         "BNB": 571.81
+      }
+    },
+    {
+      "timestamp": "2026-08-05T22:39:53.801921+00:00",
+      "event": "rebalance",
+      "from": null,
+      "to": "BNB",
+      "capital_after": 5132.36870767371,
+      "prices_snapshot": {
+        "BTC": 64663.0,
+        "ETH": 1908.8,
+        "SOL": 74.002,
+        "BNB": 594.32
       }
     }
   ]
