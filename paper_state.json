@@ -1,12 +1,12 @@
 {
   "initial_capital": 5000.0,
-  "capital_at_entry": 5817.467705056571,
-  "current_symbol": "ETH",
-  "entry_price": 2418.44182,
-  "entry_time": "2026-08-21T19:48:48.893468+00:00",
-  "last_rebalance": "2026-08-21T19:48:48.893468+00:00",
-  "trade_count": 3,
-  "win_count": 3,
+  "capital_at_entry": 5871.600995857508,
+  "current_symbol": "SOL",
+  "entry_price": 104.11040999999999,
+  "entry_time": "2026-08-29T01:56:53.011118+00:00",
+  "last_rebalance": "2026-08-29T01:56:53.011118+00:00",
+  "trade_count": 4,
+  "win_count": 4,
   "history": [
     {
       "timestamp": "2026-07-14T10:39:15.183896+00:00",
@@ -71,6 +71,19 @@
         "ETH": 2418.2,
         "SOL": 91.04,
         "BNB": 674.26
+      }
+    },
+    {
+      "timestamp": "2026-08-29T01:56:53.011118+00:00",
+      "event": "rebalance",
+      "from": "ETH",
+      "to": "SOL",
+      "capital_after": 5871.600995857508,
+      "prices_snapshot": {
+        "BTC": 77752.0,
+        "ETH": 2442.9,
+        "SOL": 104.1,
+        "BNB": 691.25
       }
     }
   ]
