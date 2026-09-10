@@ -75,3 +75,4 @@ timestamp,event,symbol,mtm_capital,btc,eth,sol,bnb,note
 2026-09-07T21:50:43.727688+00:00,monitor,SOL,5855.79,79137.00,2489.50,103.83,738.54,"target=SOL, days_to_rebal=4.96"
 2026-09-08T21:30:54.404979+00:00,monitor,SOL,5810.67,78520.00,2482.90,103.03,752.47,"target=SOL, days_to_rebal=3.97"
 2026-09-09T21:23:00.419891+00:00,monitor,SOL,5759.91,78122.00,2464.50,102.13,728.55,"target=BNB, days_to_rebal=2.98"
+2026-09-10T21:18:44.522956+00:00,monitor,SOL,5635.95,77177.00,2459.00,99.93,714.33,"target=BNB, days_to_rebal=1.98"
