@@ -1,29 +1,29 @@
 
 === Paper Trading Naive Doppio Momentum ===
-Timestamp UTC: 2026-09-10T21:18:44+00:00
+Timestamp UTC: 2026-09-11T21:26:50+00:00
 File stato:    paper_state.json
 File log:      paper_log.csv
 
 [1/4] Scarico storico daily da Hyperliquid (60 giorni)...
 Prezzi correnti:
-  BTC : $   77,177.00
-  ETH : $    2,459.00
-  SOL : $       99.93
-  BNB : $      714.33
+  BTC : $   77,370.00
+  ETH : $    2,536.70
+  SOL : $      102.86
+  BNB : $      726.80
 
 [2/4] Mark-to-market
-  Capitale virtuale corrente: $5,635.95
+  Capitale virtuale corrente: $5,801.08
   Capitale iniziale:          $5,000.00
-  Rendimento totale:          +12.72%
-  Posizione aperta:           SOL @ $104.11 (P&L non realizzato: -4.01%)
+  Rendimento totale:          +16.02%
+  Posizione aperta:           SOL @ $104.11 (P&L non realizzato: -1.20%)
 
 [3/4] Calcolo segnale Naive Doppio Momentum (14d + 30d)
-  BTC : mom14d  -3.79%  mom30d +21.42%  [--]
-  ETH : mom14d  -2.04%  mom30d +30.66%  [--]
-  SOL : mom14d  -8.46%  mom30d +31.03%  [--]
-  BNB : mom14d  +0.26%  mom30d +15.89%  [OK]
-  --> Segnale target: BNB
+  BTC : mom14d  -0.59%  mom30d +21.90%  [--]
+  ETH : mom14d  +3.87%  mom30d +34.97%  [OK]
+  SOL : mom14d  -1.22%  mom30d +36.06%  [--]
+  BNB : mom14d  +5.12%  mom30d +19.11%  [OK]
+  --> Segnale target: ETH
 
 [4/4] Decisione di rebalance
-  Ultimo rebalance:  2026-09-05T20:49:37.010873+00:00 (5.02 giorni fa)
-  Non e' ancora tempo di rebalance (prossimo tra 1.98 giorni)
+  Ultimo rebalance:  2026-09-05T20:49:37.010873+00:00 (6.03 giorni fa)
+  Non e' ancora tempo di rebalance (prossimo tra 0.97 giorni)
