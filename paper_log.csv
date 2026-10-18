@@ -116,3 +116,4 @@ timestamp,event,symbol,mtm_capital,btc,eth,sol,bnb,note
 2026-10-15T21:51:57.323535+00:00,monitor,CASH,5912.66,82335.00,2458.10,105.94,730.69,"target=None, days_to_rebal=2.01"
 2026-10-16T21:50:14.426406+00:00,monitor,CASH,5912.66,81697.00,2416.50,104.24,721.40,"target=None, days_to_rebal=1.01"
 2026-10-17T21:09:23.516509+00:00,monitor,CASH,5912.66,81603.00,2420.90,104.14,719.42,"target=None, days_to_rebal=0.04"
+2026-10-18T21:10:45.335116+00:00,rebalance_hold,CASH,5912.66,80909.00,2352.20,101.09,708.12,"no change"
