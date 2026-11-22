@@ -467,3 +467,4 @@ timestamp,event,symbol,mtm_capital,btc,eth,sol,bnb,note
 2026-11-21T21:37:33.316062+00:00,monitor,CASH,6246.18,60407.00,1686.00,70.47,548.60,"target=None, days_to_rebal=5.40"
 2026-11-22T06:39:48.459712+00:00,monitor,CASH,6246.18,59226.00,1663.90,69.14,539.43,"target=None, days_to_rebal=5.02"
 2026-11-22T16:13:41.368900+00:00,monitor,CASH,6246.18,61032.00,1718.90,70.39,558.16,"target=None, days_to_rebal=4.62"
+2026-11-22T21:45:58.875892+00:00,monitor,CASH,6246.18,60994.00,1723.60,70.44,558.32,"target=None, days_to_rebal=4.39"
